@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guess the Drink</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    .ingredients {
+      margin-bottom: 20px;
+    }
+    .ingredients div {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .game {
+      margin-top: 20px;
+    }
+    .guess-input {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .guess-input input {
+      width: 20px;
+      margin-right: 5px;
+      text-align: center;
+    }
+    .message {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>三杯和万事 一醉解千愁</h1>
+<p style="color: gray; font-size: 14px; margin-top: -10px;">
+  输入 8 个代表材料的数字（0–9），猜出正确顺序的鸡尾酒配方。
+  顺序正确 = 位置正确的数的个数，材料正确=材料正确但位置不对的个数。
+  <br></br>
+  有些材料不像鸡尾酒里会加的？我知道……我知道。
+</p>
+<div class="ingredients" id="ingredients-list"></div>
+
+<div class="game">
+  <div class="guess-input" id="guess-input"></div>
+  <button onclick="submitGuess()">Submit Guess</button>
+  <div class="message" id="message"></div>
+  <ul id="history"></ul>
+</div>
+
+<script>
+  const ingredientPool = [
+      '柠檬', '薄荷叶', '伏特加', '朗姆酒', '龙舌兰', '可乐',
+      '奎宁水', '橙汁', '辣椒粉', '盐',
+      '糖浆', '红石榴糖浆', '冰块', '椰奶',
+      '浓缩咖啡', '姜汁汽水', '肉桂', '蜂蜜', '青柠汁',
+      '感冒药','酱油','醋','芥末酱','耗油','番茄酱','辣油'
+  ];
+
+  const colors = ['red', 'blue', 'green', 'purple', 'orange'];
+
+  const digitToIngredient = {};
+  const digitColors = {};
+  const usedIngredients = [];
+
+  function getRandomIngredient() {
+    let ingredient;
+    do {
+      ingredient = ingredientPool[Math.floor(Math.random() * ingredientPool.length)];
+    } while (usedIngredients.includes(ingredient));
+    usedIngredients.push(ingredient);
+    return ingredient;
+  }
+
+  for (let i = 0; i <= 9; i++) {
+    digitToIngredient[i] = getRandomIngredient();
+  }
+
+  const colorPairs = {};
+  for (let i = 0; i < 10; i += 2) {
+    const color = colors[Math.floor(i / 2)];
+    digitColors[i] = color;
+    digitColors[i + 1] = color;
+    colorPairs[color] = [i, i + 1];
+  }
+
+  const correctSequence = Array.from({length: 8}, () => Math.floor(Math.random() * 10));
+  let attempts = 0;
+  const maxAttempts = 12;
+  let hintStage = 0;
+
+const colorToChinese = {
+  red: '红瓶',
+  blue: '蓝瓶',
+  green: '绿瓶',
+  purple: '紫瓶',
+  orange: '橙瓶'
+};
+
+
+  const ingredientList = document.getElementById('ingredients-list');
+  for (let i = 0; i <= 9; i++) {
+    const div = document.createElement('div');
+    div.innerHTML = `<strong>${i}</strong>: ${digitToIngredient[i]} <span style="color:${digitColors[i]}">(${colorToChinese[digitColors[i]]})</span>`;
+    ingredientList.appendChild(div);
+  }
+
+  const guessInput = document.getElementById('guess-input');
+  for (let i = 0; i < 8; i++) {
+    const input = document.createElement('input');
+    input.maxLength = 1;
+    input.type = 'text';
+    input.pattern = '[0-9]';
+    guessInput.appendChild(input);
+  }
+
+  function submitGuess() {
+    const inputs = [...guessInput.querySelectorAll('input')];
+    const guess = inputs.map(input => parseInt(input.value));
+    if (guess.some(isNaN) || guess.length !== 8) {
+      document.getElementById('message').textContent = "请输入8种调酒材料 (0-9)";
+      return;
+    }
+
+    attempts++;
+    let correctPlace = 0;
+    let correctNumber = 0;
+
+    const seqCopy = [...correctSequence];
+    const guessCopy = [...guess];
+
+    // First pass for correct place
+    for (let i = 0; i < 8; i++) {
+      if (guess[i] === correctSequence[i]) {
+        correctPlace++;
+        seqCopy[i] = guessCopy[i] = null;
+      }
+    }
+
+    // Second pass for correct numbers in wrong place
+    for (let i = 0; i < 8; i++) {
+      if (guessCopy[i] !== null) {
+        const index = seqCopy.indexOf(guessCopy[i]);
+        if (index !== -1) {
+          correctNumber++;
+          seqCopy[index] = null;
+        }
+      }
+    }
+
+    const history = document.getElementById('history');
+    const li = document.createElement('li');
+    li.textContent = `猜测 ${attempts}: ${guess.join('')} → ${correctPlace} 处顺序正确, ${correctNumber} 种材料正确`;
+    history.appendChild(li);
+
+    if (correctPlace === 8) {
+      const drinkName = correctSequence.map(num => digitToIngredient[num]).join(' 加 ');
+      const numberString = correctSequence.join(' ');
+      document.getElementById('message').innerHTML = `🎉 恭喜！这是一杯特调 <strong>${drinkName}</strong>. 请享用!<br><em>(对应数字: ${numberString})</em>`;
+      guessInput.innerHTML = '';
+      return;
+    }
+
+    if (attempts % 3 === 0 && hintStage < 3) {
+      giveHint(hintStage++);
+    }
+
+    if (attempts >= maxAttempts) {
+      const drinkName = correctSequence.map(num => digitToIngredient[num]).join(' 加 ');
+      const numberString = correctSequence.join(' ');
+      document.getElementById('message').innerHTML = `❌ 猜错啦! 这是一杯 <strong>${drinkName}</strong>.<br><em>(对应数字: ${numberString})</em>`;
+      guessInput.innerHTML = '';
+    }
+  }
+
+  function giveHint(stage) {
+    let hint = '';
+    if (stage === 0) {
+      const color = digitColors[correctSequence[0]];
+      hint = `提示：如果这会给你一些灵感——我在前3步加了一种 ${colorToChinese[color]} 的材料。`;
+    } else if (stage === 1) {
+      const idx = Math.floor(Math.random() * 8);
+      const color = digitColors[correctSequence[idx]];
+      hint = `提示：接着，我在第${idx + 1}步加了一种${colorToChinese[color]}的材料!`;
+    } else if (stage === 2) {
+      const idx = Math.floor(Math.random() * 8);
+      const ingredient = digitToIngredient[correctSequence[idx]];
+      hint = `提示：这是独家秘方————我在第${idx + 1}步加了一些${ingredient}……好啦，这是最后的提示，再说下去就要破坏游戏的乐趣了。`;
+    }
+    const li = document.createElement('li');
+    li.textContent = hint;
+    li.style.fontStyle = 'italic';
+    document.getElementById('history').appendChild(li);
+  }
+</script>
+
+</body>
+</html>
+
+<script src="smart-input.js"></script>
+
