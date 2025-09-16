@@ -44,7 +44,7 @@
 
 <h1>三杯和万事 一醉解千愁</h1>
 <p style="color: gray; font-size: 14px; margin-top: -10px;">
-  输入 8 个代表材料的数字（0–9），猜出正确顺序的鸡尾酒配方。
+  输入 8 个代表材料的数字（0–9），猜出正确顺序的鸡尾酒配方。你有12次机会！
   材料正确=材料正确但顺序错误的个数。
   <br></br>
   有些材料不像鸡尾酒里会加的？我知道……我知道。
@@ -53,7 +53,7 @@
 
 <div class="game">
   <div class="guess-input" id="guess-input"></div>
-  <button onclick="submitGuess()">猜一猜</button>
+  <button id = "submit-btn" onclick="submitGuess()">猜一猜</button>
   <div class="message" id="message"></div>
   <ul id="history"></ul>
 </div>
@@ -162,53 +162,88 @@ const colorToChinese = {
     const history = document.getElementById('history');
     const li = document.createElement('li');
     li.textContent = `猜测 ${attempts}: ${guess.join('')} → ${correctPlace} 处顺序正确, ${correctNumber} 种材料正确`;
-    history.appendChild(li);
+    history.insertBefore(li,history.firstChild);
+
+    const submitBtn = document.getElementById('submit-btn');
 
     if (correctPlace === 8) {
       const drinkName = correctSequence.map(num => digitToIngredient[num]).join(' 加 ');
       const numberString = correctSequence.join(' ');
-      document.getElementById('message').innerHTML = `🎉 恭喜！这是一杯特调 <strong>${drinkName}</strong>. 请享用!<br><em>(对应数字: ${numberString})</em>`;
+      const ingredientCount = {};
+      correctSequence.forEach(num => {
+        const ingredient = digitToIngredient[num];
+        ingredientCount[ingredient] = (ingredientCount[ingredient] || 0) + 1;
+      });
+      const countStrings = Object.entries(ingredientCount).map(([ingredient, count]) => {
+        return `${count}份${ingredient}`;
+      }).join('，');
+
+      document.getElementById('message').innerHTML = `🎉 恭喜！这是一杯特调 <strong>${drinkName}</strong>. <br>
+      <em>(对应数字: ${numberString})</em><br>
+      这里面有 ${countStrings}。请享用!`;
       guessInput.innerHTML = '';
+      submitBtn.textContent = '再猜一杯';
+      submitBtn.onclick = resetGame;
       return;
     }
 
     if (attempts % 3 === 0 && hintStage < 3) {
-      giveHint(hintStage++);
+      giveHint(hintStage++,history);
     }
 
     if (attempts >= maxAttempts) {
       const drinkName = correctSequence.map(num => digitToIngredient[num]).join(' 加 ');
       const numberString = correctSequence.join(' ');
-      document.getElementById('message').innerHTML = `❌ 猜错啦! 这是一杯 <strong>${drinkName}</strong>.<br><em>(对应数字: ${numberString})</em>`;
+      
+      const ingredientCount = {};
+      correctSequence.forEach(num => {
+        const ingredient = digitToIngredient[num];
+        ingredientCount[ingredient] = (ingredientCount[ingredient] || 0) + 1;
+      });
+      const countStrings = Object.entries(ingredientCount).map(([ingredient, count]) => {
+        return `${count}份${ingredient}`;
+      }).join('，');
+
+      document.getElementById('message').innerHTML = `❌ 猜错啦! 这是一杯 <strong>${drinkName}</strong>.<br>
+      <em>(对应数字: ${numberString})</em><br>
+      这里面有 ${countStrings}。你想试试吗？`;
       guessInput.innerHTML = '';
+      submitBtn.textContent = '再猜一杯（清空记录）';
+      submitBtn.onclick = resetGame;
     }
   }
 
-  function giveHint(stage) {
+  function giveHint(stage,history) {
     let hint = '';
     if (stage === 0) {
       const color = digitColors[correctSequence[0]];
-      hint = `提示：如果这会给你一些灵感——我在前3步加了一种 ${colorToChinese[color]} 的材料。`;
+      hint = `提示1：如果这会给你一些灵感——我在前3步加了一种 ${colorToChinese[color]} 的材料。`;
     } else if (stage === 1) {
       const idx = Math.floor(Math.random() * 8);
       const color = digitColors[correctSequence[idx]];
-      hint = `提示：接着，我在第${idx + 1}步加了一种${colorToChinese[color]}的材料!`;
+      hint = `提示2：更具体点说——我在第${idx + 1}步加了一种${colorToChinese[color]}的材料!`;
     } else if (stage === 2) {
       const idx = Math.floor(Math.random() * 8);
       const ingredient = digitToIngredient[correctSequence[idx]];
-      hint = `提示：这是独家秘方————我在第${idx + 1}步加了一些${ingredient}……好啦，这是最后的提示，再说下去就要破坏游戏的乐趣了。`;
+      hint = `提示3：这是独家秘方：我在第${idx + 1}步加了一些${ingredient}……好啦，这是最后的提示，再说下去就要破坏游戏的乐趣了。`;
     }
     const li = document.createElement('li');
     li.textContent = hint;
     li.style.fontStyle = 'italic';
-    document.getElementById('history').appendChild(li);
+    document.getElementById('history').insertBefore(li,history.firstChild);
   }
+
+  function resetGame() {
+    location.reload();
+  }
+
 </script>
 
 </body>
 </html>
 
 <script src="smart-input.js"></script>
+
 
 
 
