@@ -117,8 +117,9 @@ const colorToChinese = {
   for (let i = 0; i < 8; i++) {
     const input = document.createElement('input');
     input.maxLength = 1;
-    input.type = 'text';
-    input.pattern = '[0-9]';
+    input.type = 'tel';
+    input.inputMode = 'numeric';  
+    input.pattern = '[0-9]*';
     guessInput.appendChild(input);
   }
 
@@ -206,5 +207,6 @@ const colorToChinese = {
 </html>
 
 <script src="smart-input.js"></script>
+
 
 
