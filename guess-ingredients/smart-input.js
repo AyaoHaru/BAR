@@ -38,7 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     input.addEventListener("focus", () => {
-      input.select(); // So typing overwrites instead of appending
+      setTimeout(() => input.select(), 0); // So typing overwrites instead of appending
     });
   });
 });
+
