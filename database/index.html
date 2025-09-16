@@ -1,75 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Stock & Coin Manager</title>
-</head>
-<body>
-  <h1>Stock & Coin Manager</h1>
-
-  <label for="userID">Enter your ID:</label>
-  <input type="text" id="userID" placeholder="e.g. user123" />
-  <button onclick="fetchUser()">Fetch User Info</button>
-
-  <div id="userData" style="display: none;">
-    <p>Stock: <span id="stockDisplay">-</span></p>
-    <p>Coins: <span id="coinsDisplay">-</span></p>
-
-    <label for="stockChange">Stock Change (+buy, -sell):</label>
-    <input type="number" id="stockChange" />
-    <button onclick="submitTransaction()">Submit Transaction</button>
-  </div>
-
-  <script>
-    let currentUser = null;
-
-    async function fetchUser() {
-      const id = document.getElementById('userID').value.trim();
-      if (!id) return alert("Please enter your ID.");
-
-      const response = await fetch('/.netlify/functions/IDlookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        currentUser = data.results[0];
-        const stock = currentUser.properties.Stock.number;
-        const coins = currentUser.properties.Coins.number;
-
-        document.getElementById('stockDisplay').textContent = stock;
-        document.getElementById('coinsDisplay').textContent = coins;
-        document.getElementById('userData').style.display = 'block';
-      } else {
-        alert("User not found.");
+<html>
+  <head>
+    <title>Database App</title>
+    <style>
+      html, body, iframe {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        border: none;
       }
-    }
-
-    async function submitTransaction() {
-      const stockChange = parseInt(document.getElementById('stockChange').value);
-      if (isNaN(stockChange) || !currentUser) return alert("Invalid transaction.");
-
-      const response = await fetch('/.netlify/functions/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pageId: currentUser.id,
-          stockChange: stockChange
-        })
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-        document.getElementById('stockDisplay').textContent = result.newStock;
-        document.getElementById('coinsDisplay').textContent = result.newCoins;
-        alert("Transaction successful!");
-      } else {
-        alert("Transaction failed: " + result.error);
-      }
-    }
-  </script>
-</body>
+    </style>
+  </head>
+  <body>
+    <iframe src="https://morian-bar-shop.netlify.app/" frameborder="0"></iframe>
+  </body>
 </html>
