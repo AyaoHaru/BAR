@@ -215,16 +215,19 @@ const colorToChinese = {
 
   function giveHint(stage,history) {
     let hint = '';
-    const idx = Math.floor(Math.random() * 8);
+    const idx = Math.floor(Math.random() * 2);
     if (stage === 0) {
       const color = digitColors[correctSequence[idx]];
       hint = `提示1：如果这会给你一些灵感——我在第${idx + 1}步加了一种 ${colorToChinese[color]} 的材料。`;
     } else if (stage === 1) {
-      const ingredient = digitToIngredient[correctSequence[(idx+3) % 8]];
-      hint = `提示2：更具体点说——我在第${(idx+3) % 8 + 1}步加了一些${ingredient}!`;
+      const ingredient = digitToIngredient[correctSequence[idx+2]];
+      hint = `提示2：更具体点说——我在第${idx + 3}步加了一些${ingredient}!`;
     } else if (stage === 2) {
-      const ingredient = digitToIngredient[correctSequence[(idx+5) % 8]];
-      hint = `提示3：这是独家秘方：我在第${(idx+5) % 8 + 1}步加了一些${ingredient}……好啦，这是最后的提示，再说下去就要破坏游戏的乐趣了。`;
+      const ingredient = digitToIngredient[correctSequence[idx+4]];
+      hint = `提示3：这是独家秘方：我在第${idx + 5}步加了一些${ingredient}……`;
+    } else if (stage === 3) {
+      const ingredient = digitToIngredient[correctSequence[idx+6]];
+      hint = `提示4：另外，我在第${idx + 7}步加了一些${ingredient}，只是为了好玩……好啦，这是最后的提示，再说下去就要破坏游戏的乐趣了。`;
     }
     const li = document.createElement('li');
     li.textContent = hint;
@@ -242,6 +245,7 @@ const colorToChinese = {
 </html>
 
 <script src="smart-input.js"></script>
+
 
 
 
