@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subliminal Drift - 漂移意识</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      position: relative;
+      height: 100vh;
+    }
+
+    .phrase {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 18px;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      pointer-events: auto;
+      user-select: none;
+      z-index: 10;
+    }
+
+    .fade-out {
+      opacity: 0 !important;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  const whitePhrases = [
+    "你在找什么？", "这是真实的吗？", "选择还是幻觉？",
+    "你的记忆安全吗？", "别眨眼", "他们在看你"
+  ];
+
+  const redPhrases = [
+    "现在就放弃", "你不属于这里", "他们来了",
+    "请立即断开连接", "伪装已被识破", "逃不掉了"
+  ];
+
+  function createPhrase(text, color, jump = false) {
+    const phrase = document.createElement('div');
+    phrase.classList.add('phrase');
+    phrase.textContent = text;
+    phrase.style.color = color;
+    phrase.style.left = `${Math.random() * 90}%`;
+    phrase.style.top = `${Math.random() * 90}%`;
+    phrase.style.opacity = 1;
+
+    document.body.appendChild(phrase);
+
+    // 漂浮消失逻辑
+    setTimeout(() => {
+      phrase.classList.add('fade-out');
+      setTimeout(() => phrase.remove(), 1000); // 清理 DOM
+    }, 3000);
+
+    // 鼠标掠过行为
+    phrase.addEventListener('mouseenter', () => {
+      if (color === 'white') {
+        phrase.remove(); // 白色短语：掠过即消失
+      } else if (color === 'red' && jump) {
+        // 红色短语：掠过跳转新标签页
+        window.open('https://morian-abyss.is', '_blank');
+        phrase.remove();
+      }
+    });
+  }
+
+  // 不断生成短语
+  setInterval(() => {
+    const isRed = Math.random() < 0.3; // 30% 概率为红色跳转短语
+    if (isRed) {
+      const text = redPhrases[Math.floor(Math.random() * redPhrases.length)];
+      createPhrase(text, 'red', true);
+    } else {
+      const text = whitePhrases[Math.floor(Math.random() * whitePhrases.length)];
+      createPhrase(text, 'white', false);
+    }
+  }, 800); // 每 800 毫秒出现一条
+</script>
+
+</body>
+</html>
