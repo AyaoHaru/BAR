@@ -204,14 +204,25 @@
         if(idxr <= 0) idxr += 8;
 
         //get the sum of index + value for table 2
-        let reverse2 = table2.map((v, i) => (i+1) + v);
+        let reverse2 = table2.map((v, i) => {
+            let sum = (i + 1) + v;
+            sum = sum % 8;
+            if (sum <= 0) sum += 8;
+            return sum;
+        });
         let idx2r = reverse2.indexOf(idxr)
 
-        let reverse1 = table1.map((v, i) => (i+1) + v);
+        let reverse1 = table1.map((v, i) => {
+            let sum = (i + 1) + v;
+            sum = sum % 8;
+            if (sum <= 0) sum += 8;
+            return sum;
+        });
         let idx1r = reverse1.indexOf(idx2r+1)
         
         let finalIndex = idx1r;
         
+        //document.getElementById('result').textContent = reverse1.join(', ');
         document.getElementById('result').textContent = letters[finalIndex];
 
         // Rotation logic after calculation, only for original table1/table2
