@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Button Window Sequence - Random</title>
+  <style>
+    body {
+      background: #f0f0f0;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #windows-container {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .btn-window {
+      position: fixed;
+      width: 220px;
+      height: 80px;
+      background: #fff;
+      border: 2px solid #888;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8em;
+      cursor: pointer;
+      transition: opacity 0.4s;
+      opacity: 0;
+      pointer-events: none;
+      user-select: none;
+      z-index: 500;
+    }
+    .btn-window.active {
+      opacity: 1;
+      pointer-events: auto;
+      animation: appear 0.3s;
+    }
+    @keyframes appear {
+      from {opacity: 0; transform: scale(0.91);}
+      to {opacity: 1; transform: scale(1);}
+    }
+    .btn-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 1.1em;
+      color: #999;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 3;
+      transition: color 0.2s;
+      pointer-events: auto;
+    }
+    .btn-close:hover {
+      color: #f43;
+    }
+    .disabled {
+      pointer-events: none !important;
+      opacity: 0.75;
+    }
+    /* Optional: nice effect for focus */
+    .btn-window:active {
+      border-color: #0aa;
+    }
+  </style>
+</head>
+<body>
+  <div id="windows-container"></div>
+  <script>
+    // ---- Window positioning helper ----
+    function getRandomPosition(winWidth, winHeight) {
+      const pad = 10; // pixels from each edge to ensure fully visible
+      const maxLeft = window.innerWidth - winWidth - pad;
+      const maxTop  = window.innerHeight - winHeight - pad;
+      // If window is too small, clamp
+      const left = Math.floor(Math.random() * Math.max(maxLeft - pad, 1)) + pad;
+      const top = Math.floor(Math.random() * Math.max(maxTop - pad, 1)) + pad;
+      return {left, top};
+    }
+
+    // ---- Sequence logic as before ----
+    const sequences = [
+      ['A'],
+      ['B'],
+      ['C', 'D', 'E'],
+      ['F']
+    ];
+    let loopSequence = 0;
+
+    function createWindow(name, enabled = false, closeCb, clickCb) {
+      const winWidth = 220, winHeight = 80;
+      const {left, top} = getRandomPosition(winWidth, winHeight);
+
+      const div = document.createElement('div');
+      div.className = 'btn-window';
+      div.textContent = name;
+
+      div.style.left = left + 'px';
+      div.style.top = top + 'px';
+
+      // X button
+      const x = document.createElement('span');
+      x.className = 'btn-close';
+      x.textContent = '✕';
+      x.title = 'Close';
+      div.appendChild(x);
+
+      // X handles close, prevent event bubbling
+      x.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!div.classList.contains('disabled'))
+          closeCb && closeCb(div);
+      });
+
+      // Window click except X: redirect
+      div.addEventListener('click', function(e) {
+        if(e.target !== x && enabled && !div.classList.contains('disabled')) {
+          window.location.href = "temp.html";
+        }
+      });
+
+      // Interaction enable/disable
+      if (!enabled) div.classList.add('disabled');
+      return div;
+    }
+
+    // Sequence logic variables
+    let closedCDE = [];
+    function showNextSequence(seqIndex) {
+      const container = document.getElementById('windows-container');
+      container.innerHTML = '';
+      closedCDE = [];
+
+      let sequence = sequences[seqIndex];
+      let windows = [], i = 0;
+
+      // Show with random positions, sequentially
+      function showWindow() {
+        if (i >= sequence.length) return;
+        let name = sequence[i];
+        let enabled = false;
+
+        let win = createWindow(name, enabled, function(div) {
+          // --- Close logic ---
+          if(seqIndex === 2) {
+            // For CDE order check
+            closedCDE.push(name);
+            div.classList.remove('active');
+            div.remove();
+            // If all closed
+            if(closedCDE.length === 3) {
+              if (closedCDE.join('') === 'CDE') {
+                loopSequence = 3; // Show F
+                showNextSequence(loopSequence);
+              } else {
+                loopSequence = 0; // restart at A
+                showNextSequence(loopSequence);
+              }
+            }
+          } else if(seqIndex === 3) {
+            // F closed, restart to A
+            div.classList.remove('active');
+            div.remove();
+            loopSequence = 0;
+            showNextSequence(loopSequence);
+          } else {
+            // A or B, just step forward
+            div.classList.remove('active');
+            div.remove();
+            loopSequence++;
+            showNextSequence(loopSequence);
+          }
+        }, function(div){ /* handled in parent */ });
+
+        container.appendChild(win);
+
+        // Appear and enable after 0.5s
+        setTimeout(() => {
+          win.classList.add('active');
+          setTimeout(()=>{
+            win.classList.remove('disabled');
+            win.enabled = true;
+          }, 0);
+        }, i*100);
+
+        windows.push(win);
+        i++;
+        if(i < sequence.length) setTimeout(showWindow, 100);
+      }
+      showWindow();
+    }
+
+    // Begin with A
+    showNextSequence(loopSequence);
+
+    // Responsive: reposition buttons on window resize (to stay inside)
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('.btn-window').forEach(win => {
+        // If removed, skip
+        if(!document.body.contains(win)) return;
+        const winWidth = 220, winHeight = 80;
+        const {left, top} = getRandomPosition(winWidth, winHeight);
+        win.style.left = left + 'px';
+        win.style.top = top + 'px';
+      });
+    });
+  </script>
+</body>
+</html>
