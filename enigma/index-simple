@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>7-Letter Enigma Simulator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 740px; margin: 40px auto; }
+        .section { margin-bottom: 14px; }
+        input[type="text"], select { width: 36px; }
+        .output { background: #fff; border: 1px solid #ccc; min-height: 34px; font-size: 1.35em; padding: 8px; letter-spacing:0.2em; }
+        .viscontainer { background: #f7f7f7; border: 1px solid #bbb; padding: 8px; }
+        .rotor-table { display: inline-block; margin: 0 20px; }
+        .rotor-table th { text-align: center; }
+        .rotor-table td { text-align: center; width: 25px; }
+        .highlight { background: #ffffa0; font-weight: bold; }
+        .path-arrow { font-size: 22px; vertical-align: middle; }
+        .out-letter { color: #2196f3; font-weight: bold; font-size: 1.1em; padding: 2px; }
+        .letter-btn { font-size: 1.3em; padding: 8px 21px; margin: 2px; border: 2px solid #444; border-radius: 5px; cursor: pointer; background:#e0e7fa;}
+        .letter-btn:hover { background:#fff3a0;}
+        .settinginput { width: 170px; }
+        .clear-btn { font-size:1em; padding:4px 15px; margin-left:10px; }
+    </style>
+</head>
+<body>
+    <h1>7-Letter Enigma Simulator</h1>
+
+    <div class="section">
+        <strong>Plugboard pairs (set 3 unique pairs):</strong><br>
+        <span class="settinginput">Pair 1:
+            <select id="pb1a"></select> -
+            <select id="pb1b"></select>
+        </span>
+        <span class="settinginput">Pair 2:
+            <select id="pb2a"></select> -
+            <select id="pb2b"></select>
+        </span>
+        <span class="settinginput">Pair 3:
+            <select id="pb3a"></select> -
+            <select id="pb3b"></select>
+        </span>
+    </div>
+
+    <div class="section">
+        <strong>Rotors:</strong>
+        <div>
+            Rotor 1:
+            <input type="text" id="rotor1map" value="HAILQUWZ" maxlength="8" placeholder="wiring (perm)">
+            Start:
+            <select id="rotor1start"></select>
+        </div>
+        <div>
+            Rotor 2:
+            <input type="text" id="rotor2map" value="QZWHULIA" maxlength="8" placeholder="wiring (perm)">
+            Start:
+            <select id="rotor2start"></select>
+        </div>
+    </div>
+
+    <div class="section">
+        <strong>Reflector:</strong>
+        <input type="text" id="reflectormap" value="AZQHLUIW" maxlength="8" placeholder="wiring (perm)">
+    </div>
+
+    <div class="section">
+        <strong>Press a letter button:</strong><br>
+        <div id="letterButtons"></div>
+        <button class="clear-btn" id="clearBtn" type="button">Clear Input & Output</button>
+    </div>
+
+    <div class="section">
+        <span>Output:</span>
+        <span class="output" id="outputText"></span>
+    </div>
+
+    <div class="section viscontainer">
+        <strong>Encryption process visualization:</strong>
+        <div id="visualization"></div>
+    </div>
+
+<script>
+// 7-letter alphabet
+const alphabet = 'AHILQUWZ'.split('');
+
+// Fill all select inputs for the seven letters
+['pb1a','pb1b','pb2a','pb2b','pb3a','pb3b','rotor1start','rotor2start'].forEach(id=>{
+    const sel = document.getElementById(id);
+    alphabet.forEach(l=>{
+        let opt = document.createElement('option');
+        opt.value = l;
+        opt.text = l;
+        sel.appendChild(opt);
+    });
+});
+// Default plugboard
+document.getElementById('pb1a').selectedIndex = 0;
+document.getElementById('pb1b').selectedIndex = 1;
+document.getElementById('pb2a').selectedIndex = 2;
+document.getElementById('pb2b').selectedIndex = 3;
+document.getElementById('pb3a').selectedIndex = 4;
+document.getElementById('pb3b').selectedIndex = 5;
+// Default rotors
+document.getElementById('rotor1start').selectedIndex = 0;
+document.getElementById('rotor2start').selectedIndex = 0;
+
+// Buttons for input letters
+const letterBtnsDiv = document.getElementById('letterButtons');
+alphabet.forEach(function(l){
+    let btn = document.createElement('button');
+    btn.textContent = l;
+    btn.className = "letter-btn";
+    btn.type = "button";
+    btn.onclick = ()=>pressLetter(l);
+    letterBtnsDiv.appendChild(btn);
+});
+
+// Clear button
+document.getElementById('clearBtn').onclick = function(){
+    typedLetters.length = 0;
+    processLiveEnigma();
+};
+
+// JS helpers
+function letterIndex(ch) {
+    return alphabet.indexOf(ch);
+}
+function makePlugboard(pairs) {
+    let pb = [...alphabet];
+    for(const [a, b] of pairs) {
+        const ai = letterIndex(a), bi = letterIndex(b);
+        pb[ai] = b;
+        pb[bi] = a;
+    }
+    return pb;
+}
+function validatePermutation(map) {
+    let arr = map.toUpperCase().split('');
+    if(arr.length !== 8) return false;
+    let sorted = [...arr].sort().join('');
+    return sorted === alphabet.slice().sort().join('');
+}
+function rotorTable(rotorArr, highlightIn=null, highlightOut=null) {
+    let html = '<table class="rotor-table"><tr><th>IN</th>';
+    for(let i=0; i<alphabet.length; ++i)
+        html += `<td${highlightIn === i ? ' class="highlight"':''}>${alphabet[i]}</td>`;
+    html += '</tr><tr><th>OUT</th>';
+    for(let i=0; i<rotorArr.length; ++i)
+        html += `<td${highlightOut === i ? ' class="highlight"':''}>${rotorArr[i]}</td>`;
+    html += '</tr></table>';
+    return html;
+}
+function plugboardTable(pbArr, highlight=null) {
+    let html = '<table class="rotor-table"><tr><th>IN</th>';
+    for(let i=0; i<alphabet.length; ++i)
+        html += `<td${highlight === i ? ' class="highlight"':''}>${alphabet[i]}</td>`;
+    html += '</tr><tr><th>OUT</th>';
+    for(let i=0; i<pbArr.length; ++i)
+        html += `<td${highlight === i ? ' class="highlight"':''}>${pbArr[i]}</td>`;
+    html += '</tr></table>';
+    return html;
+}
+function reflectorTable(refArr, highlight=null) {
+    let html = '<table class="rotor-table"><tr><th>IN</th>';
+    for(let i=0; i<alphabet.length; ++i)
+        html += `<td${highlight === i ? ' class="highlight"':''}>${alphabet[i]}</td>`;
+    html += '</tr><tr><th>OUT</th>';
+    for(let i=0; i<refArr.length; ++i)
+        html += `<td${highlight === i ? ' class="highlight"':''}>${refArr[i]}</td>`;
+    html += '</tr></table>';
+    return html;
+}
+
+// Store typed input
+let typedLetters = [];
+
+// Main process and visualization
+function processLiveEnigma(){
+    // Plugboard pairs
+    let pairs = [
+        [document.getElementById('pb1a').value, document.getElementById('pb1b').value],
+        [document.getElementById('pb2a').value, document.getElementById('pb2b').value],
+        [document.getElementById('pb3a').value, document.getElementById('pb3b').value]
+    ];
+    // Validate plugboard: no duplicate or self-pairs
+    let used = new Set();
+    for(const [a,b] of pairs) {
+        if(a === b) {
+            document.getElementById('outputText').textContent = '';
+            document.getElementById('visualization').innerHTML = "Plugboard error: pair cannot connect a letter to itself.";
+            return;
+        }
+        if(used.has(a) || used.has(b)) {
+            document.getElementById('outputText').textContent = '';
+            document.getElementById('visualization').innerHTML = "Plugboard error: duplicate letter in plugboard pairs.";
+            return;
+        }
+        used.add(a); used.add(b);
+    }
+    // Build plugboard
+    let plugboard = makePlugboard(pairs);
+
+    // Get and validate rotor mapping
+    let rotor1Map = document.getElementById('rotor1map').value.toUpperCase();
+    let rotor2Map = document.getElementById('rotor2map').value.toUpperCase();
+    if(!validatePermutation(rotor1Map)) {
+        document.getElementById('outputText').textContent = '';
+        document.getElementById('visualization').innerHTML = 'Rotor 1 mapping is not a valid permutation!';
+        return;
+    }
+    if(!validatePermutation(rotor2Map)) {
+        document.getElementById('outputText').textContent = '';
+        document.getElementById('visualization').innerHTML = 'Rotor 2 mapping is not a valid permutation!';
+        return;
+    }
+    let rot1 = rotor1Map.split('');
+    let rot2 = rotor2Map.split('');
+
+    // Reflector
+    let reflectorMap = document.getElementById('reflectormap').value.toUpperCase();
+    if(!validatePermutation(reflectorMap)) {
+        document.getElementById('outputText').textContent = '';
+        document.getElementById('visualization').innerHTML = 'Reflector mapping is not a valid permutation!';
+        return;
+    }
+    let reflectorArr = reflectorMap.split('');
+
+    // Rotor positions
+    let rotor1Start = letterIndex(document.getElementById('rotor1start').value);
+    let rotor2Start = letterIndex(document.getElementById('rotor2start').value);
+
+    let output = '';
+    let visHtml = '';
+
+    // Step variables
+    let rotor1Pos = rotor1Start;
+    let rotor2Pos = rotor2Start;
+
+    // Process letters one by one
+    for(let i=0;i<typedLetters.length;i++) {
+        // Each letter: Rotor1 rotates; Rotor2 rotates every 6 steps.
+        rotor1Pos = (rotor1Start + i) % 7;
+        rotor2Pos = (rotor2Start + Math.floor(i/6)) % 7;
+        // Build rotated wiring for this step
+        let rot1Step = rot1.slice();
+        let rot2Step = rot2.slice();
+        for(let r=0; r<rotor1Pos; r++)
+            rot1Step.push(rot1Step.shift());
+        for(let r=0; r<rotor2Pos; r++)
+            rot2Step.push(rot2Step.shift());
+
+        let ch = typedLetters[i];
+        let path = [];
+        let idx = letterIndex(ch);
+        // Plugboard in
+        let pbIn = plugboard[idx];
+        path.push({stage:"Plugboard",in:ch,out:pbIn,arr:plugboard,highlight:idx});
+        // Rotor1 forward
+        let rot1InIdx = letterIndex(pbIn); // input
+        let rot1OutIdx = rot1InIdx;
+        let rot1Out = rot1Step[rot1OutIdx];
+        path.push({stage:"Rotor1→",in:pbIn,out:rot1Out,arr:rot1Step,highlight:rot1InIdx});
+        // Rotor2 forward
+        let rot2InIdx = letterIndex(rot1Out);
+        let rot2OutIdx = rot2InIdx;
+        let rot2Out = rot2Step[rot2OutIdx];
+        path.push({stage:"Rotor2→",in:rot1Out,out:rot2Out,arr:rot2Step,highlight:rot2InIdx});
+        // Reflector
+        let reflInIdx = letterIndex(rot2Out);
+        let reflOutIdx = reflInIdx;
+        let reflOut = reflectorArr[reflOutIdx];
+        path.push({stage:"Reflector",in:rot2Out,out:reflOut,arr:reflectorArr,highlight:reflInIdx});
+        // Rotor2 backward
+        let rot2BackOutIdx = rot2Step.indexOf(reflOut);
+        let rot2BackOut = alphabet[rot2BackOutIdx];
+        path.push({stage:"←Rotor2",in:reflOut,out:rot2BackOut,arr:rot2Step,highlight:rot2BackOutIdx});
+        // Rotor1 backward
+        let rot1BackOutIdx = rot1Step.indexOf(rot2BackOut);
+        let rot1BackOut = alphabet[rot1BackOutIdx];
+        path.push({stage:"←Rotor1",in:rot2BackOut,out:rot1BackOut,arr:rot1Step,highlight:rot1BackOutIdx});
+        // Plugboard out
+        let pbOut = plugboard[letterIndex(rot1BackOut)];
+        path.push({stage:"Plugboard",in:rot1BackOut,out:pbOut,arr:plugboard,highlight:letterIndex(rot1BackOut)});
+        output += pbOut;
+
+        // Visualization for last typed letter
+        if(i === typedLetters.length - 1) {
+            visHtml += `<div style="margin-bottom:5px;"><b>Step ${i+1}: '<span style="color:#222;font-weight:bold;">${ch}</span>' &rarr; '<span class="out-letter">${pbOut}</span>'</b></div>`;
+            visHtml += '<div>';
+            for(let j=0;j<path.length;j++) {
+                let p = path[j];
+                visHtml += `<div><span>${p.stage}</span>: `;
+                if(p.stage==="Plugboard")
+                    visHtml += plugboardTable(p.arr, p.highlight);
+                else if(p.stage==="Reflector")
+                    visHtml += reflectorTable(p.arr, p.highlight);
+                else
+                    visHtml += rotorTable(p.arr, p.highlight, letterIndex(p.out));
+                visHtml += `&nbsp;<span class="path-arrow">&#8594;</span> <span class="out-letter">${p.in} → ${p.out}</span></div>`;
+            }
+            visHtml += '</div>';
+            visHtml += '<div style="margin-top:10px;"><b>Rotor positions:</b><br>';
+            visHtml += `Rotor 1: <b>${alphabet[rotor1Pos]}</b> (${rotor1Pos})<br>`;
+            visHtml += `Rotor 2: <b>${alphabet[rotor2Pos]}</b> (${rotor2Pos})<br></div>`;
+        }
+    }
+    document.getElementById('outputText').textContent = output;
+    document.getElementById('visualization').innerHTML = visHtml || '(No input yet.)';
+}
+function pressLetter(l) {
+    if(alphabet.includes(l)) {
+        typedLetters.push(l);
+        processLiveEnigma();
+    }
+}
+
+// Update settings live
+['rotor1map','rotor2map','reflectormap',
+ 'pb1a','pb1b','pb2a','pb2b','pb3a','pb3b','rotor1start','rotor2start'
+].forEach(id=>
+    document.getElementById(id).addEventListener('input', function(){
+        processLiveEnigma();
+    })
+);
+// Also change event for select (for plugboard and rotor start)
+['pb1a','pb1b','pb2a','pb2b','pb3a','pb3b','rotor1start','rotor2start'
+].forEach(id=>document.getElementById(id).addEventListener('change', processLiveEnigma));
+
+// Initialize
+window.onload = processLiveEnigma;
+</script>
+</body>
+</html>
