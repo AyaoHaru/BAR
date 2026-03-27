@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simplified Enigma Machine Simulator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+        label { display: inline-block; width: 100px; margin-bottom: 5px; }
+        select, input[type="text"] { width: 40px; }
+        .section { margin-bottom: 20px; }
+        textarea { width:100%; height:70px; }
+        .output { background: #fafafa; border: 1px solid #ddd; padding: 10px; font-family: "Courier New", monospace; }
+    </style>
+</head>
+<body>
+    <h1>Simplified Enigma Machine</h1>
+
+    <form id="enigmaForm" onsubmit="return false;">
+        <div class="section">
+            <strong>1. Plugboard (set 3 pairs):</strong><br>
+            Pair 1:
+            <select id="pb1a"></select> -
+            <select id="pb1b"></select>
+            &nbsp;&nbsp;
+            Pair 2:
+            <select id="pb2a"></select> -
+            <select id="pb2b"></select>
+            &nbsp;&nbsp;
+            Pair 3:
+            <select id="pb3a"></select> -
+            <select id="pb3b"></select>
+        </div>
+
+        <div class="section">
+            <strong>2. Rotors:</strong><br>
+            Rotor 1:
+            <select id="rotor1type">
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+            </select>
+            &nbsp;Start:
+            <select id="rotor1start"></select>
+            <br>
+            Rotor 2:
+            <select id="rotor2type">
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+            </select>
+            &nbsp;Start:
+            <select id="rotor2start"></select>
+        </div>
+
+        <div class="section">
+            <strong>3. Input text (A-Z only):</strong><br>
+            <textarea id="inputText" placeholder="Type or paste your text here..."></textarea>
+        </div>
+
+        <div class="section">
+            <button type="button" onclick="processEnigma()">Encrypt/Decrypt</button>
+        </div>
+
+        <div class="section">
+            <strong>Output:</strong>
+            <div class="output" id="outputText"></div>
+        </div>
+    </form>
+
+<script>
+// Letters helper
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+// Populate selects for plugboard and rotors
+['pb1a','pb1b','pb2a','pb2b','pb3a','pb3b','rotor1start','rotor2start'].forEach(id=>{
+    const select = document.getElementById(id);
+    alphabet.forEach(letter=>{
+        let opt = document.createElement('option');
+        opt.value = letter;
+        opt.text = letter;
+        select.appendChild(opt);
+    });
+});
+
+// ROTOR Wirings
+const rotors = {
+    I:   'EKMFLGDQVZNTOWYHXUSPAIBRCJ',
+    II:  'AJDKSIRUXBLHWTMCQGZNPYFVOE',
+    III: 'BDFHJLCPRTXVZNYEIWGAKMUSQO',
+    IV:  'ESOVPZJAYQUIRHXLNFTGKDCMWB',
+    V:   'VZBRGITYUPSDNHLXAWMJQOFECK'
+};
+const reflector = 'YRUHQSLDPXNGOKMIEBFZCWVJAT'; // Reflector B
+
+function letterIndex(ch) {
+    return ch.charCodeAt(0) - 65;
+}
+function rotate(arr) {
+    arr.push(arr.shift());
+}
+
+// ENIGMA Core functions
+function makePlugboard(pairs) {
+    // build plugboard mapping as an array
+    let pb = [...alphabet];
+    for(const [a,b] of pairs) {
+        const ai = letterIndex(a), bi = letterIndex(b);
+        pb[ai] = b;
+        pb[bi] = a;
+    }
+    return pb;
+}
+
+function processEnigma() {
+    // Get plugboard pairs
+    let pairs = [
+        [document.getElementById('pb1a').value, document.getElementById('pb1b').value],
+        [document.getElementById('pb2a').value, document.getElementById('pb2b').value],
+        [document.getElementById('pb3a').value, document.getElementById('pb3b').value]
+    ];
+
+    // Check that no plugboard letter is paired twice or to itself
+    let lettersUsed = new Set();
+    for(const [a,b] of pairs) {
+        if(a === b) {
+            alert("Plugboard: A pair cannot connect a letter to itself.");
+            return;
+        }
+        if(lettersUsed.has(a) || lettersUsed.has(b)) {
+            alert("Plugboard: Each letter can only be used in one pair.");
+            return;
+        }
+        lettersUsed.add(a);
+        lettersUsed.add(b);
+    }
+    let plugboard = makePlugboard(pairs);
+
+    // Rotors: [type, position]
+    let rotor1Type = document.getElementById('rotor1type').value;
+    let rotor2Type = document.getElementById('rotor2type').value;
+    let rotor1Data = rotors[rotor1Type].split('');
+    let rotor2Data = rotors[rotor2Type].split('');
+    let rotor1Pos = letterIndex(document.getElementById('rotor1start').value);
+    let rotor2Pos = letterIndex(document.getElementById('rotor2start').value);
+
+    // Set rotors to initial position
+    for(let i=0; i<rotor1Pos; ++i) rotate(rotor1Data);
+    for(let i=0; i<rotor2Pos; ++i) rotate(rotor2Data);
+
+    // Get and clean text
+    let input = document.getElementById('inputText').value.toUpperCase().replace(/[^A-Z]/g, '');
+    let output = '';
+
+    // process each letter
+    for(const ch of input) {
+        // Step rotors (rotor1 steps every key, rotor2 steps after rotor1 turns a full circle)
+        rotate(rotor1Data);
+        rotor1Pos = (rotor1Pos+1)%26;
+        if(rotor1Pos === 0) { // wrap, step the second rotor
+            rotate(rotor2Data);
+            rotor2Pos = (rotor2Pos+1)%26;
+        }
+
+        // Plugboard in
+        let c = plugboard[letterIndex(ch)];
+
+        // Forward through rotors
+        // Rotor 1
+        let idx = (letterIndex(c) + rotor1Pos) % 26;
+        c = rotor1Data[idx];
+        // Rotor 2
+        idx = (letterIndex(c) + rotor2Pos) % 26;
+        c = rotor2Data[idx];
+
+        // Reflector
+        idx = letterIndex(c);
+        c = reflector[idx];
+
+        // Return through rotors (reverse mapping)
+        // Rotor 2 (inverse)
+        idx = rotor2Data.indexOf(c);
+        c = alphabet[(idx - rotor2Pos + 26)%26];
+        // Rotor 1 (inverse)
+        idx = rotor1Data.indexOf(c);
+        c = alphabet[(idx - rotor1Pos + 26)%26];
+
+        // Plugboard out
+        c = plugboard[letterIndex(c)];
+
+        output += c;
+    }
+    document.getElementById('outputText').textContent = output;
+}
+
+// Set default plugboard pairs (A-B, C-D, E-F for demo)
+['pb1a','pb2a','pb3a'].forEach((id,i)=>document.getElementById(id).selectedIndex=i*2);
+['pb1b','pb2b','pb3b'].forEach((id,i)=>document.getElementById(id).selectedIndex=i*2+1);
+// Set default rotor positions
+document.getElementById('rotor1start').selectedIndex=0;
+document.getElementById('rotor2start').selectedIndex=0;
+</script>
+</body>
+</html>
