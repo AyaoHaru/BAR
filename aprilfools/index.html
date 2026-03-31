@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>桃花源</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #b04d9c;
+      color: #fff;
+      font-family: sans-serif;
+      margin: 0;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 2em;
+      font-size: 1.5em;
+      color: #fff;
+    }
+    .button-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 2em;
+      margin-top: 3em;
+      flex-wrap: wrap;
+    }
+    .png-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      outline: none;
+      display: block;
+    }
+    .png-btn img {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(255,255,255,0.08);
+      transition: box-shadow 0.2s;
+      border: 2px solid #fff;
+    }
+    .png-btn img:hover,
+    .png-btn img:focus {
+      box-shadow: 0 0 0 2px #fff, 0 4px 20px rgba(255,255,255,0.15);
+      border-color: #fff;
+    }
+    @media (max-width: 1100px) {
+      .button-row {
+        flex-direction: column;
+        gap: 2em;
+      }
+    }
+    .caption {
+      margin-top: 2em;
+      color: #fff;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  
+  <h3><br>你逐渐听清了他们的话：<br>
+    “请留下来，与我们一起生活吧。”<br>
+    </h3>
+    <div class="caption">
+    看着眼前的桃花酿，你选择……
+  </div>
+  <div class="button-row">
+    <button class="png-btn" onclick="location.href='shade-of-willows.html'">
+      <img src="button-a.png" alt="Button A">
+    </button>
+    <button class="png-btn" onclick="location.href='endless-mountains.html'">
+      <img src="button-b.png" alt="Button B">
+    </button>
+  </div>
+ 
+</body>
+</html>
