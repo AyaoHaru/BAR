@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>山重水复</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      margin: 0;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 1em;
+      font-size: 1.5em;
+      color: #fff;
+    }
+    .image-container {
+      position: relative;
+      width: 100%; 
+      max-width: 1000px;
+      margin: 30px auto;
+    }
+
+    .small-img-wrapper {
+      position: absolute;
+      /* Set as % so scales with container/large image */
+      top: 64.5%;   /* Example: adjust as needed */
+      left: 41%;  /* Example: adjust as needed */
+      z-index: 2;
+      /* Optional: to center the small image over the intended spot */
+      transform: translate(-50%, -50%);
+    }
+
+    .small-img {
+      width: 130%; /* relative size to container */
+      min-width: 30px;
+      max-width: 1000px;
+      height: auto;
+      cursor: pointer;
+      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1));
+      background: transparent;
+      transition: box-shadow 0.22s, border-color 0.22s;
+    }
+    .large-img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .caption {
+      margin: 1em auto;
+      max-width: 1400px;
+      color: #ccc;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1></h1>
+  <div class="image-container">
+    <!-- Small PNG clickable image -->
+    <div class="small-img-wrapper">
+      <img
+        src="badge-b.png"
+        alt=""
+        class="small-img"
+        onclick="window.open('badge-b.png','_blank')"
+      />
+    </div>
+    <!-- Large PNG image -->
+    <img src="end-b.png" alt="" class="large-img">
+  </div>
+  <div class="caption">
+    <br>
+    
+  </div>
+</body>
+</html>
