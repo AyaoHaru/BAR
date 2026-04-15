@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Position-Shift Cipher</title>
+  <style>
+    body {
+      font-family: 'Courier New', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'SimHei', 'Microsoft YaHei', monospace;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #0ff;
+      background: #000;
+      text-shadow: 0 0 8px rgba(0,255,0,0.6);
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      text-align: center;
+      letter-spacing: 3px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #0ff, 0 0 20px #0ff; }
+      to { text-shadow: 0 0 20px #0ff, 0 0 30px #0ff, 0 0 40px #0ff; }
+    }
+    p {
+      color: #0ff;
+      margin-bottom: 24px;
+      text-align: center;
+      opacity: 0.8;
+    }
+    .cipher-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .letter-box {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      border: 2px solid #0ff;
+      border-radius: 6px;
+      outline: none;
+      background: #111;
+      color: #0ff;
+      transition: all 0.2s;
+      box-shadow: 0 0 10px rgba(0,255,0,0.3);
+    }
+    .letter-box:focus {
+      border-color: #0ff;
+      background: #1a1a1a;
+      box-shadow: 0 0 20px rgba(0,255,255,0.6);
+      color: #0ff;
+    }
+    .output-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+      min-height: 60px;
+    }
+    .output-box {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: #1a1a1a;
+      border: 2px solid #f00;
+      border-radius: 6px;
+      color: #f00;
+      text-shadow: 0 0 8px rgba(255,0,0,0.8);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .output-box.show {
+      opacity: 1;
+    }
+    .section {
+      margin-bottom: 32px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #000;
+      background: #0ff;
+      border: 2px solid #0ff;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-family: 'Courier New', 'Noto Sans Mono CJK SC', 'Source Han Mono SC', 'SimHei', 'Microsoft YaHei', monospace;
+      transition: all 0.3s;
+      box-shadow: 0 0 10px rgba(0,255,0,0.5);
+    }
+    button:hover {
+      background: #0ff;
+      border-color: #0ff;
+      box-shadow: 0 0 20px rgba(0,255,255,0.8);
+    }
+    .button-container {
+      text-align: center;
+    }
+    .info {
+      background: #1a0a00;
+      border-left: 4px solid #f00;
+      padding: 12px;
+      margin-top: 20px;
+      border-radius: 4px;
+      color: #f00;
+      text-shadow: 0 0 5px rgba(255,0,0,0.5);
+    }
+
+    /* Glitch animation for input boxes */
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      20% { transform: translate(-2px, 2px); opacity: 0.8; }
+      40% { transform: translate(2px, -2px); opacity: 0.6; }
+      60% { transform: translate(-2px, -2px); opacity: 0.4; }
+      80% { transform: translate(2px, 2px); opacity: 0.2; }
+      100% { transform: translate(0); opacity: 0; }
+    }
+
+    .letter-box.glitch-out {
+      animation: glitch 0.6s forwards;
+    }
+
+    /* Flicker reveal for output */
+    @keyframes flicker {
+      0%, 20%, 40%, 60%, 80%, 90% { opacity: 0; }
+      10%, 30%, 50%, 70%, 85%, 95% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+
+    .output-box.flicker-in {
+      animation: flicker 1.2s forwards;
+    }
+
+    /* Fade back in for inputs */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .letter-box.fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+  </style>
+</head>
+<body>
+  <h1> CIPHER PROTOCOL </h1>
+  <p> 输入正确的代码，真相自会揭示。</p>
+
+  <div class="section">
+    <label>[ INPUT SEQUENCE 输入 ]</label>
+    <div class="cipher-grid" id="inputGrid"></div>
+    <div class="button-container">
+      <button onclick="clearInput()">RESET 重置</button>
+      <button onclick="triggerAnimation()">DECRYPT 解密</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <label>[ DECRYPTED OUTPUT 输出 ]</label>
+    <div class="output-grid" id="outputGrid"></div>
+  </div>
+
+  <div class="info">
+  <strong>⚠ CLASSIFIED ⚠</strong> RESTRICTED TO SUBCONSCIOUS INTELLIGENCE. AGENCY ACCESS LEVEL: ■■■■■■■■■<br>
+</div>
+
+  <script>
+    const shifts = [11,14,18,11,17,17,8,3,3,22,14,4,20,21,19,6,10,10];
+    const numBoxes = 18;
+
+    const inputGrid = document.getElementById('inputGrid');
+    const outputGrid = document.getElementById('outputGrid');
+    const inputs = [];
+    const outputs = [];
+
+    // Create input boxes
+    for (let i = 0; i < numBoxes; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 1;
+      input.className = 'letter-box';
+      input.dataset.index = i;
+      
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.toUpperCase();
+        if (/[A-Z]/.test(val)) {
+          e.target.value = val;
+          if (i < numBoxes - 1) {
+            inputs[i + 1].focus();
+          }
+          compute();
+        } else {
+          e.target.value = '';
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && i > 0) {
+          inputs[i - 1].focus();
+        }
+      });
+
+      inputs.push(input);
+      inputGrid.appendChild(input);
+
+      if (i === 10) {
+      const lineBreak = document.createElement('div');
+      lineBreak.style.width = '100%';
+      lineBreak.style.height = '0';
+      inputGrid.appendChild(lineBreak);
+      }
+    }
+
+    // Create output boxes
+    for (let i = 0; i < numBoxes; i++) {
+      const box = document.createElement('div');
+      box.className = 'output-box';
+      box.id = 'out' + i;
+      outputs.push(box);
+      outputGrid.appendChild(box);
+
+      if (i === 11) {
+      const lineBreak = document.createElement('div');
+      lineBreak.style.width = '100%';
+      lineBreak.style.height = '0';
+      outputGrid.appendChild(lineBreak);
+      }
+    }
+
+    function clearInput() {
+      inputs.forEach(inp => {
+        inp.value = '';
+        inp.classList.remove('glitch-out', 'fade-in');
+      });
+      outputs.forEach(out => {
+        out.textContent = '';
+        out.classList.remove('show', 'flicker-in');
+      });
+      inputs[0].focus();
+    }
+
+    function compute() {
+      for (let i = 0; i < numBoxes; i++) {
+        const letter = inputs[i].value.toUpperCase();
+        const outBox = outputs[i];
+        if (/[A-Z]/.test(letter)) {
+          const code = letter.charCodeAt(0) - 65;
+          const shift = shifts[i % shifts.length];
+          const encrypted = (code + shift) % 26;
+          outBox.textContent = String.fromCharCode(65 + encrypted);
+        } else {
+          outBox.textContent = '';
+        }
+      }
+    }
+
+    function triggerAnimation() {
+      // Check if all boxes are filled
+      const allFilled = inputs.every(inp => /[A-Z]/.test(inp.value));
+      if (!allFilled) {
+        alert('Complete the sequence first.');
+        return;
+      }
+
+      // Step 1: Glitch out input boxes
+      inputs.forEach((inp, idx) => {
+        setTimeout(() => {
+          inp.classList.add('glitch-out');
+        }, idx * 30);
+      });
+
+      // Step 2: After glitch, flicker in output boxes
+      setTimeout(() => {
+        outputs.forEach((out, idx) => {
+          setTimeout(() => {
+            out.classList.add('flicker-in');
+          }, idx * 50);
+        });
+      }, 800);
+
+      // Step 3: Fade inputs back in
+      setTimeout(() => {
+        inputs.forEach((inp, idx) => {
+          inp.classList.remove('glitch-out');
+          setTimeout(() => {
+            inp.classList.add('fade-in');
+          }, idx * 30);
+        });
+      }, 2200);
+    }
+
+    window.addEventListener('load', () => {
+      inputs[0].focus();
+    });
+  </script>
+</body>
+</html>
