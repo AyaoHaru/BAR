@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>一片虚无</title>
+  <style>
+    :root {
+      --bg1: #050816;
+      --bg2: #000000;
+      --text: #eafcff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at center, rgba(40, 70, 120, 0.18) 0%, transparent 35%),
+        radial-gradient(circle at top, rgba(120, 255, 245, 0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
+    }
+
+    /* 星空背景 */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      box-shadow:
+        0 0 6px rgba(255,255,255,0.8),
+        0 0 12px rgba(120,255,245,0.25);
+      opacity: var(--op);
+      animation: twinkle var(--dur) infinite ease-in-out;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { transform: scale(1); opacity: var(--op); }
+      50% { transform: scale(1.8); opacity: 1; }
+    }
+
+    @keyframes drift {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-18px); }
+    }
+
+    /* 页面主体 */
+    .scene {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .content {
+      width: min(92vw, 820px);
+      text-align: center;
+    }
+
+    /* 文本区域 */
+    .type-area {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 10px 16px 16px;
+    }
+
+    .log {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .line {
+      font-size: clamp(18px, 2.3vw, 28px);
+      line-height: 1.75;
+      letter-spacing: 1px;
+      color: #f1fffe;
+      text-shadow:
+        0 0 8px rgba(120,255,245,0.45),
+        0 0 18px rgba(120,255,245,0.22);
+      white-space: pre-wrap;
+      min-height: 1.6em;
+    }
+
+    .cursor {
+      display: inline-block;
+      margin-left: 3px;
+      color: #7ffcf2;
+      animation: blink 1s step-start infinite;
+      text-shadow: 0 0 10px rgba(120,255,245,0.8);
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* 虚线框：嵌入文字中间 */
+    .void-box-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin: 16px 0 12px;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .void-box-wrap.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .void-box {
+      width: min(72vw, 460px);
+      min-height: 180px;
+      border: 2px dashed rgba(234, 252, 255, 0.75);
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      box-shadow:
+        0 0 18px rgba(120,255,245,0.08),
+        inset 0 0 20px rgba(255,255,255,0.03);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      user-select: none;
+    }
+
+    .void-inner {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .void-placeholder {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: rgba(234, 252, 255, 0.55);
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .void-placeholder.hide {
+      opacity: 0;
+    }
+
+    .coin {
+      display: block;
+      max-width: min(220px, 46vw);
+      height: auto;
+      margin: 0 auto 6px;
+      filter:
+        drop-shadow(0 0 16px rgba(255, 220, 120, 0.45))
+        drop-shadow(0 0 30px rgba(120, 255, 245, 0.12));
+      user-select: none;
+      -webkit-user-drag: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .coin.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .success {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgba(234, 252, 255, 0.85);
+      text-shadow: 0 0 8px rgba(120,255,245,0.22);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .success.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: rgba(234, 252, 255, 0.45);
+    }
+
+    @media (max-width: 640px) {
+      .line {
+        font-size: 16px;
+      }
+
+      .void-box {
+        width: min(84vw, 380px);
+        min-height: 160px;
+        border-radius: 14px;
+      }
+
+      .success {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <div class="scene">
+    <div class="content">
+      <div class="type-area">
+        <div id="log" class="log"></div>
+      </div>
+
+      <div class="hint">-当前磁带：虚无-</div>
+    </div>
+  </div>
+
+  <script>
+    // 星空生成
+    const starsContainer = document.getElementById('stars');
+
+    function createStars(count = 150) {
+      const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('span');
+        star.className = 'star';
+
+        const size = Math.random() * 2.2 + 1;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const dur = (Math.random() * 3 + 1.2).toFixed(2) + 's';
+        const delay = (Math.random() * 3).toFixed(2) + 's';
+        const op = (Math.random() * 0.6 + 0.25).toFixed(2);
+
+        star.style.left = x + 'vw';
+        star.style.top = y + 'vh';
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.setProperty('--dur', dur);
+        star.style.setProperty('--op', op);
+        star.style.animationDelay = delay;
+
+        if (Math.random() > 0.85) {
+          star.style.animationName = 'twinkle, drift';
+          star.style.animationDuration = dur + ', ' + (Math.random() * 8 + 8).toFixed(2) + 's';
+          star.style.animationIterationCount = 'infinite, infinite';
+          star.style.animationDirection = 'alternate, alternate';
+        }
+
+        fragment.appendChild(star);
+      }
+
+      starsContainer.appendChild(fragment);
+    }
+
+    createStars();
+
+    const log = document.getElementById('log');
+
+    const lines = [
+      '这是一片虚无。',
+      '“黑暗本身并非物质——黑暗是没有光的状态。”',
+      '虚无本身并非实物，它是缺少的状态——缺少意义，缺少内容，缺少目标，缺少一切。',
+      '虚无即是缺失本身。',
+      '啊哈，我喜欢这个。',
+      '虚无本身没有任何实质，但这个可爱的虚线框却在暗示：“这里应该有什么的！”',
+      '即便那里什么都没有，却又存在着什么。',
+      '我们似乎给虚无创造了意义。'
+    ];
+
+    const charSpeed = 45;
+    const pauseTime = 900;
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function typeLineToNewRow(line) {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'line';
+      log.appendChild(lineEl);
+
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursor.textContent = '▍';
+
+      let current = '';
+      for (let i = 0; i < line.length; i++) {
+        current += line[i];
+        lineEl.innerHTML = '';
+        lineEl.appendChild(document.createTextNode(current));
+        lineEl.appendChild(cursor);
+        await sleep(charSpeed);
+      }
+
+      await sleep(pauseTime);
+      cursor.remove();
+    }
+
+    function createVoidBox() {
+      const wrap = document.createElement('div');
+      wrap.className = 'void-box-wrap';
+
+      const box = document.createElement('div');
+      box.className = 'void-box';
+
+      const inner = document.createElement('div');
+      inner.className = 'void-inner';
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'void-placeholder';
+
+      inner.appendChild(placeholder);
+      box.appendChild(inner);
+      wrap.appendChild(box);
+
+      log.appendChild(wrap);
+
+      requestAnimationFrame(() => {
+        wrap.classList.add('show');
+      });
+
+      return { wrap, inner, placeholder };
+    }
+
+    function showFinalInsideBox(inner, placeholder) {
+      placeholder.classList.add('hide');
+
+
+      const success = document.createElement('div');
+      success.className = 'success';
+      success.textContent = '恭喜你发现隐藏彩蛋《一片虚无》！虽然这个彩蛋并没有任何奖励，但发现彩蛋本身就是意义……大概吧！';
+
+      
+      inner.appendChild(success);
+
+      requestAnimationFrame(() => {
+        success.classList.add('show');
+      });
+    }
+
+    async function playSequence() {
+      let voidBoxData = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        await typeLineToNewRow(lines[i]);
+
+        // 第4句后插入虚线框，浮现在文字中间
+        if (i === 3) {
+          voidBoxData = createVoidBox();
+          await sleep(1200);
+        }
+      }
+
+      // 最后把 png 和祝贺语放到虚线框内
+      if (voidBoxData) {
+        showFinalInsideBox(voidBoxData.inner, voidBoxData.placeholder);
+      }
+    }
+
+    window.addEventListener('load', playSequence);
+  </script>
+</body>
+</html>
