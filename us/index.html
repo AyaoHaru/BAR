@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我们正是星渊</title>
+  <style>
+    :root {
+      --bg1: #050816;
+      --bg2: #000000;
+      --text: #eafcff;
+      --glow: rgba(120, 255, 245, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at center, rgba(40, 70, 120, 0.18) 0%, transparent 35%),
+        radial-gradient(circle at top, rgba(120, 255, 245, 0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
+    }
+
+    /* 星空背景 */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      box-shadow:
+        0 0 6px rgba(255,255,255,0.8),
+        0 0 12px rgba(120,255,245,0.25);
+      opacity: var(--op);
+      animation: twinkle var(--dur) infinite ease-in-out;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { transform: scale(1); opacity: var(--op); }
+      50% { transform: scale(1.8); opacity: 1; }
+    }
+
+    @keyframes drift {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-18px); }
+    }
+
+    /* 页面主体 */
+    .scene {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .content {
+      width: min(92vw, 760px);
+      text-align: center;
+    }
+
+    /* 输出记录容器 */
+    .type-area {
+      min-height: 220px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .log {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .line {
+      font-size: clamp(18px, 2.3vw, 28px);
+      line-height: 1.6;
+      letter-spacing: 1px;
+      color: #f1fffe;
+      text-shadow:
+        0 0 8px rgba(120,255,245,0.45),
+        0 0 18px rgba(120,255,245,0.22);
+      white-space: pre-wrap;
+      min-height: 1.6em;
+    }
+
+    .cursor {
+      display: inline-block;
+      margin-left: 3px;
+      color: #7ffcf2;
+      animation: blink 1s step-start infinite;
+      text-shadow: 0 0 10px rgba(120,255,245,0.8);
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .final {
+      margin-top: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .final.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .coin {
+      display: block;
+      max-width: min(220px, 48vw);
+      height: auto;
+      margin: 0 auto 12px;
+      filter:
+        drop-shadow(0 0 16px rgba(255, 220, 120, 0.45))
+        drop-shadow(0 0 30px rgba(120, 255, 245, 0.12));
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .success {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgba(234, 252, 255, 0.85);
+      text-shadow: 0 0 8px rgba(120,255,245,0.22);
+    }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: rgba(234, 252, 255, 0.45);
+    }
+
+    @media (max-width: 640px) {
+      .type-area {
+        min-height: 240px;
+      }
+
+      .line {
+        font-size: 16px;
+      }
+
+      .success {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <div class="scene">
+    <div class="content">
+      <div class="type-area">
+        <div id="log" class="log"></div>
+      </div>
+
+      <div id="final" class="final">
+        <img src="coin.png" alt="coin" class="coin" />
+        <div class="success">恭喜你通关！</div>
+      </div>
+
+      <div class="hint">-当前磁带：我们-</div>
+    </div>
+  </div>
+
+  <script>
+    // 星空生成
+    const starsContainer = document.getElementById('stars');
+
+    function createStars(count = 150) {
+      const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('span');
+        star.className = 'star';
+
+        const size = Math.random() * 2.2 + 1;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const dur = (Math.random() * 3 + 1.2).toFixed(2) + 's';
+        const delay = (Math.random() * 3).toFixed(2) + 's';
+        const op = (Math.random() * 0.6 + 0.25).toFixed(2);
+
+        star.style.left = x + 'vw';
+        star.style.top = y + 'vh';
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.setProperty('--dur', dur);
+        star.style.setProperty('--op', op);
+        star.style.animationDelay = delay;
+
+        if (Math.random() > 0.85) {
+          star.style.animationName = 'twinkle, drift';
+          star.style.animationDuration = dur + ', ' + (Math.random() * 8 + 8).toFixed(2) + 's';
+          star.style.animationIterationCount = 'infinite, infinite';
+          star.style.animationDirection = 'alternate, alternate';
+        }
+
+        fragment.appendChild(star);
+      }
+
+      starsContainer.appendChild(fragment);
+    }
+
+    createStars();
+
+    // 打字机逻辑：逐句保留
+    const log = document.getElementById('log');
+    const finalBox = document.getElementById('final');
+
+    const lines = [
+      '没错，莫里安星渊正是“我们”，',
+      '每一个人、每一件物、每一段时间。',
+      '恭喜你完成了这个猜词游戏，',
+      '这时一点小小的奖品。',
+      '（磁带机颤动了几下…）',
+      '（一枚硬币掉了出来。）'
+    ];
+
+    const charSpeed = 55;
+    const pauseTime = 1000;
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function typeLineToNewRow(line) {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'line';
+      log.appendChild(lineEl);
+
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursor.textContent = '▍';
+
+      let current = '';
+      for (let i = 0; i < line.length; i++) {
+        current += line[i];
+        lineEl.innerHTML = '';
+        lineEl.appendChild(document.createTextNode(current));
+        lineEl.appendChild(cursor);
+        await sleep(charSpeed);
+      }
+
+      // 该句完成后停顿 1 秒，光标继续闪烁
+      await sleep(pauseTime);
+
+      // 去掉当前句子的光标，但保留文字
+      cursor.remove();
+    }
+
+    async function playSequence() {
+      for (const line of lines) {
+        await typeLineToNewRow(line);
+      }
+
+      finalBox.classList.add('show');
+    }
+
+    window.addEventListener('load', playSequence);
+  </script>
+</body>
+</html>
